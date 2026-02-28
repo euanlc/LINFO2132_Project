@@ -2,11 +2,11 @@ package compiler.Lexer;
 
 import java.lang.String;
 
-public class Symbol {
+public class Symbol<T> {
     private String type;
-    private String value;
+    private T value;
 
-    public Symbol(String type, String value) {
+    public Symbol(String type, T value) {
         this.type = type;
         this.value = value;
     }

@@ -10,7 +10,7 @@ public class Compiler {
     public static void main(String[] args) {
         if (args.length > 0) {
             if (args[0].equals("-lexer")) {
-                System.out.println("Running Lexer...");
+                // System.out.println("Running Lexer...");
                 String filePath = args[1];
                 try (java.io.FileReader reader = new java.io.FileReader(filePath)) {
                     Lexer lexer = new Lexer(reader);

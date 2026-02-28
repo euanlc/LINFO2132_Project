@@ -3,21 +3,27 @@ package compiler.Lexer;
 import java.util.List;
 import java.util.ArrayList;
 import java.lang.String;
+import java.util.Set;
 
 import java.io.Reader;
 import compiler.Lexer.Symbol;
 
 //TODO: define language
-//      check if char is in language, if not throw an error
-//      identify symbol type
+
 
 // Language definition:
 // 1. Identifiers: [a-z_][a-zA-Z0-9_]*
 // 2. Collections: [A-Z][a-zA-Z0-9_]*
+// 3. Keywords: final, coll, def, for, while, if, else, return, not, ARRAY
+// 4. Types: INT, FLOAT, STRING, BOOLEAN
 
 public class Lexer {
     private Reader input;
-    private static final String SPECIAL_CHARACTERS = "=+-*/%<>(){}[].,;|&"; // Define special characters
+    private static final Set<String> OPERATORS = Set.of("=", "+", "-", "*", "/", "%", "==", "=/=", "<", ">", "<=", ">=", "&&", "||");
+    private static final Set<String> SPECIAL_CHARACTERS = Set.of("(", ")", "{", "}", "[", "]", ".", ",", ";");
+    private static final Set<String> KEYWORDS = Set.of("final", "coll", "def", "for", "while", "if", "else", "return", "not", "ARRAY"); 
+    private static final Set<String> TYPES = Set.of("INT", "FLOAT", "STRING", "BOOLEAN");
+    private static final Set<String> BOOLEAN = Set.of("true", "false");
     private char prevEndingChar = ' '; // To track the last character that ended a symbol
 
     public Lexer(Reader input) {
@@ -30,7 +36,7 @@ public class Lexer {
         try { 
             char ch;
             if (prevEndingChar == ' ' || Character.isWhitespace(prevEndingChar)) {
-                ch = (char) input.read();
+                ch = (char) this.input.read();
             } else {
                 ch = prevEndingChar; // Start with the last character that ended a symbol
             }
@@ -66,11 +72,14 @@ public class Lexer {
                     } else if (Character.isDigit(ch) || ch == '.') {
                         state = 3; // Number state
                         buffer += ch;
-                    } else if (SPECIAL_CHARACTERS.indexOf(ch) != -1) {
+                    } else if (OPERATORS.contains(String.valueOf(ch))) {
                         state = 4; // Special symbol state
                         buffer += ch;
                     } else if (ch == '"'){
                         state = 5; // String literal state
+                    } else if (SPECIAL_CHARACTERS.contains(String.valueOf(ch))) {
+                        state = 6;
+                        buffer += ch;
                     } else {
                         throw new IllegalArgumentException("unrecognised token: " + ch);
                     }
@@ -79,40 +88,62 @@ public class Lexer {
                         buffer += ch;
                     } else {
                         this.prevEndingChar = ch;
-                        return new Symbol("IDENTIFIER", buffer); // end of symbol
+                        if (KEYWORDS.contains(buffer)) {
+                            return new Symbol<String>("KEYWORD", buffer); // end of symbol
+                        } else if (BOOLEAN.contains(buffer)) {
+                            return new Symbol<Boolean>("BOOLEAN", Boolean.parseBoolean(buffer)); // end of symbol
+                        } else {
+                            return new Symbol<String>("IDENTIFIER", buffer); // end of symbol
+                        }
                     }
                 } else if (state == 2) { // Collection state
                     if (Character.isLetterOrDigit(ch) || ch == '_') {
                         buffer += ch;
                     } else {
                         this.prevEndingChar = ch;
-                        return new Symbol("COLLECTION", buffer); // end of symbol
+                        if (buffer.equals("ARRAY")) {
+                            return new Symbol<String>("KEYWORD", buffer); // end of symbol
+                        } else  if (TYPES.contains(buffer)) {
+                            return new Symbol<String>("TYPE", buffer); // end of symbol
+                        } else {
+                            return new Symbol<String>("COLLECTION", buffer); // end of symbol
+                        }
                     }
                 } else if (state == 3) { // Number state
                     if (Character.isDigit(ch) || ch == '.') {
                         buffer += ch;
+                    } else if (buffer.equals(".")) {
+                        this.prevEndingChar = ch;
+                        return new Symbol<String>("SPECIAL_CHARACTER", buffer); // treat . as special character if it's alone
                     } else {
                         this.prevEndingChar = ch;
-                            return new Symbol("NUMBER", buffer); // end of symbol
+                        if (buffer.contains(".")) {
+                            return new Symbol<Float>("FLOAT", Float.parseFloat(buffer)); // end of symbol
+                        } else {
+                            return new Symbol<Integer>("INT", Integer.parseInt(buffer)); // end of symbol
+                        }
                     }
                 } else if (state == 4) { // Special symbol state
-                    if (SPECIAL_CHARACTERS.indexOf(ch) != -1) {
+                    if (OPERATORS.contains(String.valueOf(buffer + ch)) || String.valueOf(buffer + ch).equals("=/")) {
                         buffer += ch;
                     } else {
                         this.prevEndingChar = ch;
-                        return new Symbol("SPECIAL_SYMBOL", buffer); // end of symbol
+                        return new Symbol<String>("OPERATOR", buffer); // end of symbol
                     }
                 } else if (state == 5) { // String literal state
                     if (ch != '"') {
                         buffer += ch;
                     } else {
                         this.prevEndingChar = ' '; // avoid treating the closing quote as a separate opening quote for the next symbol
-                        return new Symbol("STRING", buffer); // end of symbol
+                        return new Symbol<String>("STRING", buffer); // end of symbol
                     }
+                } else if (state == 6) { // Special symbol state
+                    this.prevEndingChar = ch;
+                    return new Symbol<String>("SPECIAL_CHARACTER", buffer); // end of symbol
                 }
                 ch = (char) input.read();
             }
-            return new Symbol("EOF", ""); // End of file symbol
+            return new Symbol<String>("EOF", ""); // End of file symbol
         } catch (java.io.IOException e) {
             throw new RuntimeException(e);
         }
