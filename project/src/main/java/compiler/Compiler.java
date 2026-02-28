@@ -3,8 +3,33 @@
  */
 package compiler;
 
+import compiler.Lexer.Lexer;
+import compiler.Lexer.Symbol;
+
 public class Compiler {
     public static void main(String[] args) {
-        System.out.println("Hello from the compiler !");
+        if (args.length > 0) {
+            if (args[0].equals("-lexer")) {
+                System.out.println("Running Lexer...");
+                String filePath = args[1];
+                try (java.io.FileReader reader = new java.io.FileReader(filePath)) {
+                    Lexer lexer = new Lexer(reader);
+                    while (true) {
+                        Symbol symbol = lexer.getNextSymbol();
+                        if (symbol.toString().equals("<EOF, >")) {
+                            System.out.println("End of file reached.");
+                            break; // End of file reached
+                        }
+                        System.out.println(symbol);
+                    }
+                } catch (java.io.IOException e) {
+                    System.out.println("Error reading file: " + e.getMessage());
+                }
+            } else {
+                System.out.println("Unknown option: " + args[0]);
+            }
+        } else {
+            System.out.println("No option provided. Use -lexer <file_path> to run the lexer.");
+        }
     }
 }
