@@ -22,7 +22,7 @@ public class Lexer {
     private static final Set<String> OPERATORS = Set.of("=", "+", "-", "*", "/", "%", "==", "=/=", "<", ">", "<=", ">=", "&&", "||");
     private static final Set<String> SPECIAL_CHARACTERS = Set.of("(", ")", "{", "}", "[", "]", ".", ",", ";");
     private static final Set<String> KEYWORDS = Set.of("final", "coll", "def", "for", "while", "if", "else", "return", "not", "ARRAY"); 
-    private static final Set<String> TYPES = Set.of("INT", "FLOAT", "STRING", "BOOLEAN");
+    private static final Set<String> TYPES = Set.of("INT", "FLOAT", "STRING", "BOOL");
     private static final Set<String> BOOLEAN = Set.of("true", "false");
     private char prevEndingChar = ' '; // To track the last character that ended a symbol
 
@@ -72,7 +72,7 @@ public class Lexer {
                     } else if (Character.isDigit(ch) || ch == '.') {
                         state = 3; // Number state
                         buffer += ch;
-                    } else if (OPERATORS.contains(String.valueOf(ch))) {
+                    } else if (OPERATORS.contains(String.valueOf(ch)) || ch == '&' || ch == '|') {
                         state = 4; // Special symbol state
                         buffer += ch;
                     } else if (ch == '"'){
@@ -130,14 +130,28 @@ public class Lexer {
                         this.prevEndingChar = ch;
                         return new Symbol<String>("OPERATOR", buffer); // end of symbol
                     }
-                } else if (state == 5) { // String literal state
-                    if (ch != '"') {
-                        buffer += ch;
-                    } else {
-                        this.prevEndingChar = ' '; // avoid treating the closing quote as a separate opening quote for the next symbol
-                        return new Symbol<String>("STRING", buffer); // end of symbol
-                    }
-                } else if (state == 6) { // Special symbol state
+               } else if (state == 5) { // String literal state
+    if (ch == '\\') { 
+        // If we encounter a backslash, read the next character for the escape sequence
+        char nextCh = (char) input.read(); 
+        if (nextCh == 'n') {
+            buffer += '\n';
+        } else if (nextCh == '\\') {
+            buffer += '\\';
+        } else if (nextCh == '"') {
+            buffer += '"';
+        } else {
+            // If it's an unrecognized escape character, append both to the buffer
+            buffer += '\\';
+            buffer += nextCh;
+        }
+    } else if (ch != '"') {
+        buffer += ch;
+    } else {
+        this.prevEndingChar = ' '; // avoid treating the closing quote as a separate opening quote for the next symbol
+        return new Symbol<String>("STRING", buffer); // end of symbol
+    }
+} else if (state == 6) { // Special symbol state
                     this.prevEndingChar = ch;
                     return new Symbol<String>("SPECIAL_CHARACTER", buffer); // end of symbol
                 }
