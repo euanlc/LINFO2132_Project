@@ -60,7 +60,9 @@ public class Lexer {
                 // System.out.println("Current char: " + ch + ", State: " + state + ", Buffer: '" + buffer + "'");
 
                 if (ch == (char) -1) {
-                    break; // End of file
+                    if (buffer.isEmpty()) {
+                        break; // End of file
+                    }
                 }
                 if (state == 0) {
                     if (Character.isLowerCase(ch) || ch == '_') {

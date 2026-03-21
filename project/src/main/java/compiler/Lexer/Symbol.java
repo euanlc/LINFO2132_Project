@@ -10,7 +10,13 @@ public class Symbol<T> {
         this.type = type;
         this.value = value;
     }
+    public String getType() {
+        return type;
+    }
 
+    public T getValue() {
+        return value;
+    }
     // Overiding the toString method to return the type and value of the symbol as <TYPE, value>
     @Override
     public String toString() {
