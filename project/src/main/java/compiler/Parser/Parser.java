@@ -39,11 +39,10 @@ public class Parser {
     }
 
     private ASTNode parseStatement() {
-       
+        // حلال مشکل کلمه final
         if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("final")) {
             eatValue("KEYWORD", "final");
         }
-        // -----------------------------------------
 
         if (currentSymbol.getType().equals("TYPE")) {
             return parseDeclaration();
@@ -114,7 +113,7 @@ public class Parser {
         eat("IDENTIFIER");
         eatValue("SPECIAL_CHARACTER", ";");
         
-        ASTNode startExpr = parseTerm(); // استفاده از parseTerm برای حل مشکل فلش ->
+        ASTNode startExpr = parseTerm(); 
         
         eatValue("OPERATOR", "-");
         eatValue("OPERATOR", ">");
@@ -177,8 +176,15 @@ public class Parser {
 
     private ASTNode parseFactor() {
         if (currentSymbol.getType().equals("INT")) {
-            int value = (int) currentSymbol.getValue();
+            Object val = currentSymbol.getValue();
+            int value = (val instanceof Integer) ? (int)val : ((Double)val).intValue();
             eat("INT");
+            return new IntegerNode(value);
+        } else if (currentSymbol.getType().equals("FLOAT")) {
+            Object val = currentSymbol.getValue();
+            // چون IntegerNode فقط int می‌گیره، فعلاً کست می‌کنیم به int
+            int value = (val instanceof Double) ? ((Double)val).intValue() : (int)val;
+            eat("FLOAT");
             return new IntegerNode(value);
         } else if (currentSymbol.getType().equals("IDENTIFIER")) {
             String name = (String) currentSymbol.getValue();
