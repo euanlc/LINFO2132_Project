@@ -39,6 +39,12 @@ public class Parser {
     }
 
     private ASTNode parseStatement() {
+       
+        if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("final")) {
+            eatValue("KEYWORD", "final");
+        }
+        // -----------------------------------------
+
         if (currentSymbol.getType().equals("TYPE")) {
             return parseDeclaration();
         } else if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("if")) {
@@ -46,7 +52,7 @@ public class Parser {
         } else if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("while")) {
             return parseWhileStatement();
         } else if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("for")) {
-            return parseForStatement(); // اضافه شدن متد for
+            return parseForStatement();
         } else if (currentSymbol.getType().equals("SPECIAL_CHARACTER") && currentSymbol.getValue().equals("{")) {
             return parseBlock();
         } else {
@@ -59,7 +65,7 @@ public class Parser {
     private ASTNode parseBlock() {
         eatValue("SPECIAL_CHARACTER", "{");
         List<ASTNode> statements = new ArrayList<>();
-
+        
         while (!(currentSymbol.getType().equals("SPECIAL_CHARACTER") && currentSymbol.getValue().equals("}"))) {
             if (currentSymbol.getType().equals("EOF")) {
                 throw new RuntimeException("Syntax Error: Unclosed block, expected '}'");
@@ -96,33 +102,31 @@ public class Parser {
         eatValue("SPECIAL_CHARACTER", ")");
 
         ASTNode bodyStmt = parseBlock();
-
+        
         return new WhileNode(condition, (BlockNode) bodyStmt);
     }
 
-    // New method: Parse a for-loop
     private ASTNode parseForStatement() {
         eatValue("KEYWORD", "for");
         eatValue("SPECIAL_CHARACTER", "(");
-
+        
         String varName = (String) currentSymbol.getValue();
         eat("IDENTIFIER");
         eatValue("SPECIAL_CHARACTER", ";");
-
-        ASTNode startExpr = parseTerm();
-
-        // Reading the '->' symbol (Lexer sees it as '-' and '>')
+        
+        ASTNode startExpr = parseTerm(); // استفاده از parseTerm برای حل مشکل فلش ->
+        
         eatValue("OPERATOR", "-");
         eatValue("OPERATOR", ">");
-
+        
         ASTNode endExpr = parseExpression();
         eatValue("SPECIAL_CHARACTER", ";");
-
+        
         ASTNode stepExpr = parseExpression();
         eatValue("SPECIAL_CHARACTER", ")");
-
+        
         ASTNode bodyStmt = parseBlock();
-
+        
         return new ForNode(varName, startExpr, endExpr, stepExpr, (BlockNode) bodyStmt);
     }
 
@@ -146,11 +150,11 @@ public class Parser {
 
     private ASTNode parseExpression() {
         ASTNode left = parseTerm();
-
+        
         while (currentSymbol.getValue().equals("+") || currentSymbol.getValue().equals("-") ||
-                currentSymbol.getValue().equals("==") || currentSymbol.getValue().equals("=/=") ||
-                currentSymbol.getValue().equals(">") || currentSymbol.getValue().equals("<") ||
-                currentSymbol.getValue().equals(">=") || currentSymbol.getValue().equals("<=")) {
+               currentSymbol.getValue().equals("==") || currentSymbol.getValue().equals("=/=") ||
+               currentSymbol.getValue().equals(">") || currentSymbol.getValue().equals("<") ||
+               currentSymbol.getValue().equals(">=") || currentSymbol.getValue().equals("<=")) {
             String op = (String) currentSymbol.getValue();
             eat("OPERATOR");
             ASTNode right = parseTerm();
@@ -161,7 +165,7 @@ public class Parser {
 
     private ASTNode parseTerm() {
         ASTNode left = parseFactor();
-
+        
         while (currentSymbol.getValue().equals("*") || currentSymbol.getValue().equals("/")) {
             String op = (String) currentSymbol.getValue();
             eat("OPERATOR");
