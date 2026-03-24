@@ -39,7 +39,6 @@ public class Parser {
     }
 
     private ASTNode parseStatement() {
-        // حلال مشکل کلمه final
         if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("final")) {
             eatValue("KEYWORD", "final");
         }
@@ -150,7 +149,8 @@ public class Parser {
     private ASTNode parseExpression() {
         ASTNode left = parseTerm();
         
-        while (currentSymbol.getValue().equals("+") || currentSymbol.getValue().equals("-") ||
+        // این همون خط طلاییه که علامت مساوی رو بهش اضافه کردیم تا مشکل آپدیت متغیر حل بشه
+        while (currentSymbol.getValue().equals("=") || currentSymbol.getValue().equals("+") || currentSymbol.getValue().equals("-") ||
                currentSymbol.getValue().equals("==") || currentSymbol.getValue().equals("=/=") ||
                currentSymbol.getValue().equals(">") || currentSymbol.getValue().equals("<") ||
                currentSymbol.getValue().equals(">=") || currentSymbol.getValue().equals("<=")) {
@@ -177,13 +177,12 @@ public class Parser {
     private ASTNode parseFactor() {
         if (currentSymbol.getType().equals("INT")) {
             Object val = currentSymbol.getValue();
-            int value = (val instanceof Integer) ? (int)val : ((Double)val).intValue();
+            int value = ((Number) val).intValue();
             eat("INT");
             return new IntegerNode(value);
         } else if (currentSymbol.getType().equals("FLOAT")) {
             Object val = currentSymbol.getValue();
-            // چون IntegerNode فقط int می‌گیره، فعلاً کست می‌کنیم به int
-            int value = (val instanceof Double) ? ((Double)val).intValue() : (int)val;
+            int value = ((Number) val).intValue();
             eat("FLOAT");
             return new IntegerNode(value);
         } else if (currentSymbol.getType().equals("IDENTIFIER")) {
