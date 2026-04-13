@@ -39,14 +39,28 @@ public class Parser {
     }
 
     private ASTNode parseStatement() {
-        if (currentSymbol.getType().equals("TYPE")) {
+        if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("final")) {
+            eatValue("KEYWORD", "final");
+        }
+
+        // --- بخش جدید: تشخیص توابع، کالکشن‌ها و خروجی‌ها ---
+        if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("def")) {
+            return parseFunction();
+        } else if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("coll")) {
+            return parseCollection();
+        } else if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("return")) {
+            return parseReturn();
+        }
+        // --------------------------------------------------
+        else if (currentSymbol.getType().equals("TYPE") ||
+                (currentSymbol.getType().equals("IDENTIFIER") && isCustomType())) { // مدیریت نوع داده کاستوم (کالکشن)
             return parseDeclaration();
         } else if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("if")) {
             return parseIfStatement();
         } else if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("while")) {
             return parseWhileStatement();
         } else if (currentSymbol.getType().equals("KEYWORD") && currentSymbol.getValue().equals("for")) {
-            return parseForStatement(); // اضافه شدن متد for
+            return parseForStatement();
         } else if (currentSymbol.getType().equals("SPECIAL_CHARACTER") && currentSymbol.getValue().equals("{")) {
             return parseBlock();
         } else {
@@ -54,6 +68,59 @@ public class Parser {
             eatValue("SPECIAL_CHARACTER", ";");
             return expr;
         }
+    }
+
+    // یک متد کمکی برای اینکه بفهمیم IDENTIFIER در واقع اسم یک کالکشن هست یا نه
+    private boolean isCustomType() {
+        String val = (String) currentSymbol.getValue();
+        return Character.isUpperCase(val.charAt(0));
+    }
+
+    private ASTNode parseFunction() {
+        eatValue("KEYWORD", "def");
+        String returnType = "void";
+        if (currentSymbol.getType().equals("TYPE")) {
+            returnType = (String) currentSymbol.getValue();
+            eat("TYPE");
+        }
+
+        String name = (String) currentSymbol.getValue();
+        eat("IDENTIFIER");
+
+        eatValue("SPECIAL_CHARACTER", "(");
+        List<ASTNode> parameters = new ArrayList<>();
+        if (!currentSymbol.getValue().equals(")")) {
+            parameters.add(parseDeclarationWithoutSemicolon());
+            while (currentSymbol.getType().equals("SPECIAL_CHARACTER") && currentSymbol.getValue().equals(",")) {
+                eatValue("SPECIAL_CHARACTER", ",");
+                parameters.add(parseDeclarationWithoutSemicolon());
+            }
+        }
+        eatValue("SPECIAL_CHARACTER", ")");
+
+        ASTNode body = parseBlock();
+        return new FunctionNode(returnType, name, parameters, (BlockNode) body);
+    }
+
+    private ASTNode parseCollection() {
+        eatValue("KEYWORD", "coll");
+        String name = (String) currentSymbol.getValue();
+        eat("IDENTIFIER");
+        eatValue("SPECIAL_CHARACTER", "{");
+
+        List<ASTNode> fields = new ArrayList<>();
+        while (!(currentSymbol.getType().equals("SPECIAL_CHARACTER") && currentSymbol.getValue().equals("}"))) {
+            fields.add(parseDeclaration());
+        }
+        eatValue("SPECIAL_CHARACTER", "}");
+        return new CollectionNode(name, fields);
+    }
+
+    private ASTNode parseReturn() {
+        eatValue("KEYWORD", "return");
+        ASTNode expr = parseExpression();
+        eatValue("SPECIAL_CHARACTER", ";");
+        return new ReturnNode(expr);
     }
 
     private ASTNode parseBlock() {
@@ -100,7 +167,6 @@ public class Parser {
         return new WhileNode(condition, (BlockNode) bodyStmt);
     }
 
-    // New method: Parse a for-loop
     private ASTNode parseForStatement() {
         eatValue("KEYWORD", "for");
         eatValue("SPECIAL_CHARACTER", "(");
@@ -111,7 +177,6 @@ public class Parser {
 
         ASTNode startExpr = parseTerm();
 
-        // Reading the '->' symbol (Lexer sees it as '-' and '>')
         eatValue("OPERATOR", "-");
         eatValue("OPERATOR", ">");
 
@@ -127,8 +192,25 @@ public class Parser {
     }
 
     private ASTNode parseDeclaration() {
+        ASTNode decl = parseDeclarationWithoutSemicolon();
+        eatValue("SPECIAL_CHARACTER", ";");
+        return decl;
+    }
+
+    // متد کمکی برای گرفتن پارامترهای تابع که سمی‌کالن آخرش ندارن
+    private ASTNode parseDeclarationWithoutSemicolon() {
         String varType = (String) currentSymbol.getValue();
-        eat("TYPE");
+        if (currentSymbol.getType().equals("TYPE") || currentSymbol.getType().equals("IDENTIFIER")) {
+            currentSymbol = lexer.getNextSymbol();
+        } else {
+            throw new RuntimeException("Syntax Error: Expected TYPE");
+        }
+
+        if (currentSymbol.getType().equals("SPECIAL_CHARACTER") && currentSymbol.getValue().equals("[")) {
+            eatValue("SPECIAL_CHARACTER", "[");
+            eatValue("SPECIAL_CHARACTER", "]");
+            varType += "[]";
+        }
 
         String varName = (String) currentSymbol.getValue();
         eat("IDENTIFIER");
@@ -138,19 +220,17 @@ public class Parser {
             eat("OPERATOR");
             expression = parseExpression();
         }
-
-        eatValue("SPECIAL_CHARACTER", ";");
-
         return new VarDeclNode(varType, varName, expression);
     }
 
     private ASTNode parseExpression() {
         ASTNode left = parseTerm();
 
-        while (currentSymbol.getValue().equals("+") || currentSymbol.getValue().equals("-") ||
+        while (currentSymbol.getValue().equals("=") || currentSymbol.getValue().equals("+") || currentSymbol.getValue().equals("-") ||
                 currentSymbol.getValue().equals("==") || currentSymbol.getValue().equals("=/=") ||
                 currentSymbol.getValue().equals(">") || currentSymbol.getValue().equals("<") ||
-                currentSymbol.getValue().equals(">=") || currentSymbol.getValue().equals("<=")) {
+                currentSymbol.getValue().equals(">=") || currentSymbol.getValue().equals("<=") ||
+                currentSymbol.getValue().equals("&&") || currentSymbol.getValue().equals("||")) {
             String op = (String) currentSymbol.getValue();
             eat("OPERATOR");
             ASTNode right = parseTerm();
@@ -173,14 +253,47 @@ public class Parser {
 
     private ASTNode parseFactor() {
         if (currentSymbol.getType().equals("INT")) {
-            int value = (int) currentSymbol.getValue();
+            Object val = currentSymbol.getValue();
+            int value = ((Number) val).intValue();
             eat("INT");
             return new IntegerNode(value);
-        } else if (currentSymbol.getType().equals("IDENTIFIER")) {
+        } else if (currentSymbol.getType().equals("FLOAT")) {
+            Object val = currentSymbol.getValue();
+            double value = ((Number) val).doubleValue();
+            eat("FLOAT");
+            return new FloatNode(value);
+        } else if (currentSymbol.getType().equals("STRING")) {
+            String val = (String) currentSymbol.getValue();
+            eat("STRING");
+            return new StringNode(val);
+        }
+        // --- بخش اصلاح شده برای شناختن راحت‌ترِ true و false ---
+        else if (String.valueOf(currentSymbol.getValue()).equals("true") || String.valueOf(currentSymbol.getValue()).equals("false")) {
+            boolean val = Boolean.parseBoolean(String.valueOf(currentSymbol.getValue()));
+            currentSymbol = lexer.getNextSymbol(); // با موفقیت ازش عبور می‌کنیم
+            return new BooleanNode(val);
+        }
+        // --------------------------------------------------------
+        else if (currentSymbol.getType().equals("IDENTIFIER")) {
             String name = (String) currentSymbol.getValue();
             eat("IDENTIFIER");
+
+            // اگر بعد از اسم پرانتز بود، یعنی فراخوانی تابع (مثل square(value))
+            if (currentSymbol.getType().equals("SPECIAL_CHARACTER") && currentSymbol.getValue().equals("(")) {
+                eatValue("SPECIAL_CHARACTER", "(");
+                List<ASTNode> args = new ArrayList<>();
+                if (!currentSymbol.getValue().equals(")")) {
+                    args.add(parseExpression());
+                    while (currentSymbol.getType().equals("SPECIAL_CHARACTER") && currentSymbol.getValue().equals(",")) {
+                        eatValue("SPECIAL_CHARACTER", ",");
+                        args.add(parseExpression());
+                    }
+                }
+                eatValue("SPECIAL_CHARACTER", ")");
+                return new FunctionCallNode(name, args);
+            }
+
             return new VariableNode(name);
         }
         throw new RuntimeException("Syntax Error: Unexpected symbol '" + currentSymbol.getValue() + "'");
-    }
-}
+    }}

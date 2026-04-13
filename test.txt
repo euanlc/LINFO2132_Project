@@ -1,4 +1,18 @@
+final INT max = 100 ;
+INT a = 5 ;
+FLOAT b = 3.2 ;
+
+if ( a < 10 ) {
+    a = a * 2 ;
+} else {
+    a = 0 ;
+}
+
+while ( a =/= 0 ) {
+    a = a - 1 ;
+}
+
 INT i ;
-for ( i ; 1 -> 100 ; i + 1 ) {
-    INT a = 5 ;
+for ( i ; 1 -> max ; i + 1 ) {
+    b = b + 1.5 ;
 }

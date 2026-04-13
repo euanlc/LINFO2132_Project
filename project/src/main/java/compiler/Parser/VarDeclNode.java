@@ -1,24 +1,22 @@
 package compiler.Parser;
 
 public class VarDeclNode extends ASTNode {
-    String type;
-    String name;
-    ASTNode expression;
+    // متغیرها به صورت public این بالا تعریف می‌شن
+    public String varType;
+    public String varName;
+    public ASTNode expression;
 
-    public VarDeclNode(String type, String name, ASTNode expression) {
-        this.type = type;
-        this.name = name;
+    public VarDeclNode(String varType, String varName, ASTNode expression) {
+        this.varType = varType;
+        this.varName = varName;
         this.expression = expression;
     }
 
     @Override
     public void print(String indent) {
-        System.out.println(indent + "Declaration");
-        System.out.println(indent + "  Type, " + type);
-        System.out.println(indent + "  Identifier, " + name);
+        System.out.println(indent + "VarDecl, " + varType + " " + varName);
         if (expression != null) {
-            System.out.println(indent + "  Assignment");
-            expression.print(indent + "    ");
+            expression.print(indent + "  ");
         }
     }
 }

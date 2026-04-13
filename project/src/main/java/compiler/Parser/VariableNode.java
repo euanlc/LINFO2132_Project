@@ -1,7 +1,7 @@
 package compiler.Parser;
 
 public class VariableNode extends ASTNode {
-    String name;
+    public String name;
 
     public VariableNode(String name) {
         this.name = name;
@@ -9,6 +9,6 @@ public class VariableNode extends ASTNode {
 
     @Override
     public void print(String indent) {
-        System.out.println(indent + "Identifier, " + name);
+        System.out.println(indent + "Variable, " + name);
     }
 }

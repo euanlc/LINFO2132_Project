@@ -1,10 +1,9 @@
 package compiler.Parser;
 
-
 public class BinOpNode extends ASTNode {
-    String operator;
-    ASTNode left;
-    ASTNode right;
+    public String operator;
+    public ASTNode left;
+    public ASTNode right;
 
     public BinOpNode(String operator, ASTNode left, ASTNode right) {
         this.operator = operator;
@@ -14,8 +13,8 @@ public class BinOpNode extends ASTNode {
 
     @Override
     public void print(String indent) {
-        System.out.println(indent + "ArithmeticOperator, " + operator);
-        left.print(indent + "  ");
-        right.print(indent + "  ");
+        System.out.println(indent + "BinOp, " + operator);
+        if (left != null) left.print(indent + "  ");
+        if (right != null) right.print(indent + "  ");
     }
 }

@@ -34,6 +34,10 @@ public class Compiler {
 
                     if (root != null) {
                         root.print(""); //
+                        compiler.Semantic.SemanticAnalyzer analyzer = new compiler.Semantic.SemanticAnalyzer();
+                        analyzer.analyze(root);
+                        // --------------------------------
+
                     }
                 } catch (java.io.IOException e) {
                     System.out.println("Error reading file: " + e.getMessage());
