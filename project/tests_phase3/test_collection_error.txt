@@ -1,0 +1,4 @@
+coll point {
+    INT x;
+}
+def main() {}

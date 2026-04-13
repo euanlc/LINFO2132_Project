@@ -1,0 +1,3 @@
+def main() {
+    INT a = 5 + true;
+}

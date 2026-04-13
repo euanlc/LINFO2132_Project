@@ -1,0 +1,5 @@
+def INT getNumber() {
+    return "hello";
+}
+
+def main() {}
