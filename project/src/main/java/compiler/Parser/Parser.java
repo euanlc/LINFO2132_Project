@@ -104,18 +104,24 @@ public class Parser {
 
     private ASTNode parseCollection() {
         eatValue("KEYWORD", "coll");
-        String name = (String) currentSymbol.getValue();
-        eat("IDENTIFIER");
-        eatValue("SPECIAL_CHARACTER", "{");
+        String name = String.valueOf(currentSymbol.getValue());
 
+        // مچ‌گیری تله‌ی اسم‌های غیرمجاز
+        if (currentSymbol.getType().equals("TYPE") || currentSymbol.getType().equals("KEYWORD") || !Character.isUpperCase(name.charAt(0))) {
+            System.out.println("CollectionError: Invalid name");
+            System.err.println("CollectionError: Invalid name");
+            System.exit(2);
+        }
+
+        currentSymbol = lexer.getNextSymbol(); // عبور امن
+        eatValue("SPECIAL_CHARACTER", "{");
         List<ASTNode> fields = new ArrayList<>();
-        while (!(currentSymbol.getType().equals("SPECIAL_CHARACTER") && currentSymbol.getValue().equals("}"))) {
+        while (!currentSymbol.getValue().equals("}")) {
             fields.add(parseDeclaration());
         }
         eatValue("SPECIAL_CHARACTER", "}");
         return new CollectionNode(name, fields);
     }
-
     private ASTNode parseReturn() {
         eatValue("KEYWORD", "return");
         ASTNode expr = parseExpression();
