@@ -1,7 +1,7 @@
 package compiler.Parser;
 
 public class IntegerNode extends ASTNode {
-    int value;
+    public int value;
 
     public IntegerNode(int value) {
         this.value = value;

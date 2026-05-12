@@ -1,0 +1,10 @@
+def main() {
+    println("Compiler Output:");
+
+    INT x = 10 * 5;
+    println(x);
+
+    println("Please enter a number:");
+    INT y = readInt();
+    println(y);
+}

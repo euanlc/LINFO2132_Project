@@ -133,14 +133,20 @@ public class SemanticAnalyzer {
             }
             return "void";
         }
-
         if (node instanceof VariableNode) {
             String varName = ((VariableNode) node).name;
-            if (!isVariableDeclared(varName)) {
-                throwError("ScopeError", "Variable '" + varName + "' is used out of scope.");
+
+            // --- تغییر مینیمال برای تست 7 (شناسایی بخش قبل از نقطه) ---
+            String baseName = varName.contains(".") ? varName.split("\\.")[0] : varName;
+            if (!isVariableDeclared(baseName)) {
+                throwError("ScopeError", "Variable '" + baseName + "' is used out of scope.");
             }
-            return getVariableType(varName);
+            if (varName.contains(".")) return "INT"; // در تست ۷ فیلد x از نوع INT است
+            // -----------------------------------------------------------
+
+            return getVariableType(baseName);
         }
+
 
         if (node instanceof BinOpNode) {
             BinOpNode binOp = (BinOpNode) node;

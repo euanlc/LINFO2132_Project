@@ -27,6 +27,10 @@ dependencies {
 
     // This dependency is used by the application.
     implementation("com.google.guava:guava:31.1-jre")
+
+    // --- کتابخانه‌های ASM برای فاز تولید کد (Code Generation) ---
+    implementation("org.ow2.asm:asm:9.6")
+    implementation("org.ow2.asm:asm-util:9.6")
 }
 
 application {
